@@ -307,6 +307,34 @@ A zero-byte result means **imported**. No result means genuinely missing.
   not do it for you.
 - **Do not delete the staging tree.** See below.
 
+### Step 5 — optional: free up iCloud
+
+Once the library looks right in Immich, `prune` deletes from iCloud everything
+taken before a date, to get under a smaller storage plan:
+
+```bash
+./icloud-migrate.sh prune 2020-01-01                  # dry run: counts, deletes nothing
+./icloud-migrate.sh prune 2020-01-01 --delete         # lists, then asks you to type "delete N"
+./icloud-migrate.sh prune 2020-01-01 --resume ~/.icloud-migrate/prune/before-….jsonl
+```
+
+- It does **not** check Immich. It deletes by date only, so run it after you
+  have looked.
+- Deleted assets go to **Recently Deleted**: recoverable for 30 days, and still
+  counting against the plan until that album is emptied. Emptying it is the
+  point of no return, and Immich then holds the only copy.
+- Lost with the iCloud copy: the motion half of Live Photos (if you imported
+  with `SKIP_LIVE=1`) and edits (the import takes unedited originals).
+- Listing a 150k-asset library takes about an hour. Each listing is saved as a
+  `.jsonl` plan, and `--resume` deletes the rest of a plan without listing
+  again.
+- Apple throttles bulk deletes (503, "concurrent write", dropped connections).
+  The script waits and retries; if Apple keeps refusing, it stops and prints
+  the `--resume` command.
+- The listing pages by position, and the iPhone syncing deletions mid-listing
+  shifts positions: some assets come back twice and as many are skipped. Run a
+  dry run at the end, and `--delete` again until it reports nothing.
+
 ---
 
 ## 3. Re-triggering flow

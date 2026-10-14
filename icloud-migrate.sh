@@ -29,10 +29,11 @@
 #   ./icloud-migrate.sh report      # progress + assets too big for FAT32
 #   ./icloud-migrate.sh album "Japan"   # one album, for validating the pipeline
 #   ./icloud-migrate.sh verify [--fix]  # cross-check done.txt against the server
+#   ./icloud-migrate.sh prune 2020-01-01 [--delete]  # delete from iCloud all taken before
 
 set -euo pipefail
 
-usage() { sed -n '2,31p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; }
 
 # Help must work before the required-variable check below, or you can never
 # read the usage without already knowing what to set.
@@ -941,8 +942,18 @@ cmd_report() {
     fi
 }
 
+# The pruning logic lives in icloud-prune.py, which needs icloudpd's own Python
+# for its iCloud library. Dry run unless --delete is passed through.
+cmd_prune() {
+    [ -n "${1:-}" ] || die "usage: prune YYYY-MM-DD [--delete | --resume PLAN.jsonl]"
+    local py; py="$(brew --prefix icloudpd)/libexec/bin/python"
+    [ -x "$py" ] || die "icloudpd's Python not found at $py"
+    "$py" "$(dirname "$0")/icloud-prune.py" --user "$ICLOUD_USER" --cookies "$COOKIES" "$@"
+}
+
 case "${1:-}" in
     login)     cmd_login ;;
+    prune)     shift; cmd_prune "$@" ;;
     report)    cmd_report ;;
     plan)      cmd_plan ;;
     verify)    cmd_verify "${2:-}" ;;

@@ -3,3 +3,6 @@ session.env
 
 # macOS directory metadata
 .DS_Store
+
+# Python bytecode from icloud-prune.py
+__pycache__/
